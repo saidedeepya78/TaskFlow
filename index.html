@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TaskFlow – Simple, focused to-do list</title>
+<meta name="description" content="TaskFlow is a clean, fast to-do list that saves your tasks in your browser.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%232563eb'/%3E%3Cpath d='M27 52l17 17 30-36' fill='none' stroke='white' stroke-width='11' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+:root{
+  --blue-900:#0f2a5c; --blue-700:#1d4ed8; --blue-600:#2563eb; --blue-500:#3b82f6;
+  --blue-100:#dbeafe; --blue-50:#eff6ff; --ink:#0f172a; --muted:#64748b;
+  --line:#e2e8f0; --white:#fff; --red:#dc2626; --amber:#d97706; --green:#059669;
+  --radius:16px; --shadow:0 10px 30px rgba(37,99,235,.12);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; min-height:100vh; color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:linear-gradient(180deg,var(--blue-100) 0,var(--blue-50) 320px,#f8fbff 100%);
+  line-height:1.5;
+}
+.wrap{max-width:760px; margin:0 auto; padding:32px 16px 48px}
+header{display:flex; align-items:center; gap:12px; margin-bottom:24px}
+.logo{width:44px; height:44px; border-radius:12px; background:linear-gradient(135deg,var(--blue-500),var(--blue-700)); display:grid; place-items:center; box-shadow:var(--shadow)}
+.logo svg{width:24px; height:24px}
+h1{margin:0; font-size:1.6rem; letter-spacing:-.02em; color:var(--blue-900)}
+.tag{margin:0; color:var(--muted); font-size:.9rem}
+.stats{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px}
+.stat{background:var(--white); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow); border:1px solid var(--blue-100)}
+.stat dt{font-size:.78rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:600}
+.stat dd{margin:4px 0 0; font-size:1.9rem; font-weight:700; color:var(--blue-700)}
+.card{background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); border:1px solid var(--blue-100); padding:20px}
+.add-form{display:grid; grid-template-columns:1fr 150px 170px auto; gap:12px; align-items:end}
+.field{display:flex; flex-direction:column; gap:6px; min-width:0}
+label,.lbl{font-size:.82rem; font-weight:600; color:var(--blue-900)}
+input[type=text],input[type=date],select{
+  width:100%; font:inherit; color:var(--ink); background:var(--white);
+  border:1.5px solid var(--line); border-radius:10px; padding:11px 12px; min-height:44px;
+}
+input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible,dialog button:focus-visible{outline:3px solid var(--blue-500); outline-offset:2px}
+input[aria-invalid=true]{border-color:var(--red)}
+.error{min-height:1.3em; margin:8px 2px 0; font-size:.85rem; color:var(--red); font-weight:500}
+button{font:inherit; cursor:pointer; border-radius:10px; min-height:44px; padding:0 18px; border:1.5px solid transparent; font-weight:600; transition:background .15s,transform .1s,box-shadow .15s}
+button:active:not(:disabled){transform:translateY(1px)}
+button:disabled{opacity:.5; cursor:not-allowed}
+.btn-primary{background:var(--blue-600); color:#fff; box-shadow:0 4px 12px rgba(37,99,235,.3)}
+.btn-primary:hover:not(:disabled){background:var(--blue-700)}
+.btn-ghost{background:var(--white); color:var(--blue-700); border-color:var(--blue-100)}
+.btn-ghost:hover:not(:disabled){background:var(--blue-50)}
+.btn-danger{background:var(--white); color:var(--red); border-color:#fecaca}
+.btn-danger:hover:not(:disabled){background:#fef2f2}
+.btn-solid-danger{background:var(--red); color:#fff}
+.btn-solid-danger:hover{background:#b91c1c}
+.toolbar{display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; margin:24px 0 12px}
+.filters{display:inline-flex; background:var(--white); border:1px solid var(--blue-100); border-radius:12px; padding:4px; gap:4px}
+.filters button{min-height:38px; padding:0 16px; background:transparent; color:var(--muted)}
+.filters button[aria-pressed=true]{background:var(--blue-600); color:#fff}
+ul{list-style:none; margin:0; padding:0; display:grid; gap:10px}
+.task{display:flex; align-items:center; gap:12px; background:var(--white); border:1px solid var(--blue-100); border-left:5px solid var(--blue-500); border-radius:14px; padding:14px 16px; box-shadow:0 2px 8px rgba(37,99,235,.06)}
+.task.p-high{border-left-color:var(--red)}
+.task.p-medium{border-left-color:var(--amber)}
+.task.p-low{border-left-color:var(--green)}
+.task input[type=checkbox]{width:22px; height:22px; accent-color:var(--blue-600); flex:none; cursor:pointer}
+.body{flex:1; min-width:0}
+.title{word-break:break-word; font-weight:500}
+.task.done .title{text-decoration:line-through; color:var(--muted)}
+.meta{display:flex; flex-wrap:wrap; gap:6px; margin-top:6px}
+.badge{font-size:.74rem; font-weight:600; padding:2px 9px; border-radius:999px; background:var(--blue-50); color:var(--blue-700)}
+.badge.high{background:#fee2e2; color:#b91c1c}
+.badge.medium{background:#fef3c7; color:#92400e}
+.badge.low{background:#d1fae5; color:#047857}
+.badge.overdue{background:var(--red); color:#fff}
+.actions{display:flex; gap:6px; flex:none}
+.actions button{min-height:38px; padding:0 12px; font-size:.85rem}
+.task.editing{flex-wrap:wrap; border-left-color:var(--blue-600)}
+.edit-grid{display:grid; grid-template-columns:1fr 140px 160px; gap:10px; width:100%}
+.edit-actions{display:flex; gap:8px; width:100%; justify-content:flex-end}
+.empty{text-align:center; padding:40px 16px; color:var(--muted)}
+.empty strong{display:block; color:var(--blue-900); font-size:1.05rem; margin-bottom:4px}
+.footer-actions{display:flex; flex-wrap:wrap; gap:10px; justify-content:flex-end; margin-top:16px}
+dialog{border:none; border-radius:var(--radius); padding:24px; max-width:420px; width:calc(100% - 32px); box-shadow:0 20px 60px rgba(15,42,92,.35)}
+dialog::backdrop{background:rgba(15,42,92,.5)}
+dialog h2{margin:0 0 8px; color:var(--blue-900); font-size:1.2rem}
+dialog p{margin:0 0 20px; color:var(--muted)}
+.dlg-actions{display:flex; gap:10px; justify-content:flex-end}
+.sr-only{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
+@media (max-width:680px){
+  .add-form{grid-template-columns:1fr 1fr}
+  .add-form .field:first-child{grid-column:1/-1}
+  .add-form button{grid-column:1/-1}
+  .edit-grid{grid-template-columns:1fr 1fr}
+  .edit-grid .field:first-child{grid-column:1/-1}
+  .task{flex-wrap:wrap}
+  .actions{width:100%; justify-content:flex-end}
+  .stat dd{font-size:1.5rem}
+  .filters{width:100%}
+  .filters button{flex:1; padding:0 8px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>
+    </div>
+    <div>
+      <h1>TaskFlow</h1>
+      <p class="tag">Plan your day. Finish what matters.</p>
+    </div>
+  </header>
+
+  <dl class="stats" aria-label="Task summary">
+    <div class="stat"><dt>Total</dt><dd id="statTotal">0</dd></div>
+    <div class="stat"><dt>Remaining</dt><dd id="statRemaining">0</dd></div>
+    <div class="stat"><dt>Completed</dt><dd id="statCompleted">0</dd></div>
+  </dl>
+
+  <section class="card" aria-labelledby="addHeading">
+    <h2 id="addHeading" class="sr-only">Add a new task</h2>
+    <form id="addForm" class="add-form" novalidate>
+      <div class="field">
+        <label for="taskInput">Task</label>
+        <input type="text" id="taskInput" placeholder="What needs to be done?" maxlength="200" autocomplete="off" aria-describedby="formError">
+      </div>
+      <div class="field">
+        <label for="prioritySelect">Priority</label>
+        <select id="prioritySelect">
+          <option value="low">Low</option>
+          <option value="medium" selected>Medium</option>
+          <option value="high">High</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="dueInput">Due date (optional)</label>
+        <input type="date" id="dueInput">
+      </div>
+      <button type="submit" class="btn-primary" id="addBtn">Add task</button>
+    </form>
+    <p id="formError" class="error" role="alert" aria-live="assertive"></p>
+  </section>
+
+  <div class="toolbar">
+    <div class="filters" role="group" aria-label="Filter tasks">
+      <button type="button" data-filter="all" aria-pressed="true">All</button>
+      <button type="button" data-filter="active" aria-pressed="false">Active</button>
+      <button type="button" data-filter="completed" aria-pressed="false">Completed</button>
+    </div>
+  </div>
+
+  <main>
+    <ul id="taskList" aria-label="Task list"></ul>
+    <div id="empty" class="empty" hidden></div>
+    <div class="footer-actions">
+      <button type="button" class="btn-ghost" id="clearCompletedBtn">Clear completed</button>
+      <button type="button" class="btn-danger" id="clearAllBtn">Clear all tasks</button>
+    </div>
+  </main>
+  <p id="status" class="sr-only" role="status" aria-live="polite"></p>
+</div>
+
+<dialog id="confirmDialog" aria-labelledby="dlgTitle" aria-describedby="dlgMsg">
+  <h2 id="dlgTitle">Are you sure?</h2>
+  <p id="dlgMsg"></p>
+  <div class="dlg-actions">
+    <button type="button" class="btn-ghost" id="dlgCancel">Cancel</button>
+    <button type="button" class="btn-solid-danger" id="dlgOk">Yes, clear</button>
+  </div>
+</dialog>
+
+<script>
+(function () {
+  'use strict';
+  var KEY = 'taskflow.tasks.v1';
+  var tasks = [];
+  var filter = 'all';
+  var editingId = null;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var form = $('addForm'), input = $('taskInput'), prio = $('prioritySelect'), due = $('dueInput');
+  var errorEl = $('formError'), list = $('taskList'), emptyEl = $('empty'), statusEl = $('status');
+  var dialog = $('confirmDialog'), pendingConfirm = null;
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      var parsed = raw ? JSON.parse(raw) : [];
+      tasks = Array.isArray(parsed) ? parsed.filter(function (t) { return t && typeof t.text === 'string'; }) : [];
+    } catch (e) { tasks = []; }
+  }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(tasks)); }
+    catch (e) { announce('Could not save: browser storage is unavailable.'); }
+  }
+  function announce(msg) { statusEl.textContent = ''; setTimeout(function () { statusEl.textContent = msg; }, 30); }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  function todayStr() {
+    var d = new Date(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
+    return d.getFullYear() + '-' + m + '-' + day;
+  }
+  function fmtDate(s) {
+    var p = s.split('-');
+    if (p.length !== 3) return s;
+    return new Date(+p[0], +p[1] - 1, +p[2]).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function btn(text, cls, label, onClick) {
+    var b = el('button', cls, text);
+    b.type = 'button';
+    if (label) b.setAttribute('aria-label', label);
+    b.addEventListener('click', onClick);
+    return b;
+  }
+
+  function showError(msg, target) {
+    errorEl.textContent = msg;
+    if (target) { target.setAttribute('aria-invalid', 'true'); target.focus(); }
+  }
+  function clearError() { errorEl.textContent = ''; input.removeAttribute('aria-invalid'); }
+
+  function addTask(e) {
+    e.preventDefault();
+    var text = input.value.trim();
+    if (!text) { showError('Please enter a task before adding it.', input); return; }
+    clearError();
+    tasks.unshift({ id: uid(), text: text, priority: prio.value, due: due.value || '', done: false });
+    save();
+    input.value = ''; due.value = ''; prio.value = 'medium';
+    render();
+    input.focus();
+    announce('Task added.');
+  }
+
+  function toggle(id) {
+    tasks.forEach(function (t) { if (t.id === id) t.done = !t.done; });
+    save(); render();
+  }
+  function remove(id) {
+    tasks = tasks.filter(function (t) { return t.id !== id; });
+    if (editingId === id) editingId = null;
+    save(); render(); announce('Task deleted.'); input.focus();
+  }
+
+  function buildRow(t) {
+    var li = el('li', 'task p-' + t.priority + (t.done ? ' done' : ''));
+    li.dataset.id = t.id;
+    var cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.checked = t.done;
+    cb.id = 'cb-' + t.id;
+    cb.setAttribute('aria-label', 'Mark "' + t.text + '" as ' + (t.done ? 'not completed' : 'completed'));
+    cb.addEventListener('change', function () { toggle(t.id); });
+
+    var body = el('div', 'body');
+    var title = el('div', 'title', t.text);
+    var meta = el('div', 'meta');
+    meta.appendChild(el('span', 'badge ' + t.priority, cap(t.priority) + ' priority'));
+    if (t.due) {
+      meta.appendChild(el('span', 'badge', 'Due ' + fmtDate(t.due)));
+      if (!t.done && t.due < todayStr()) meta.appendChild(el('span', 'badge overdue', 'Overdue'));
+    }
+    body.appendChild(title); body.appendChild(meta);
+
+    var actions = el('div', 'actions');
+    actions.appendChild(btn('Edit', 'btn-ghost', 'Edit task: ' + t.text, function () { editingId = t.id; render(true); }));
+    actions.appendChild(btn('Delete', 'btn-danger', 'Delete task: ' + t.text, function () { remove(t.id); }));
+
+    li.appendChild(cb); li.appendChild(body); li.appendChild(actions);
+    return li;
+  }
+
+  function field(labelText, control, id) {
+    var wrap = el('div', 'field');
+    var lab = el('label', null, labelText);
+    lab.setAttribute('for', id);
+    control.id = id;
+    wrap.appendChild(lab); wrap.appendChild(control);
+    return wrap;
+  }
+
+  function buildEditRow(t) {
+    var li = el('li', 'task editing p-' + t.priority);
+    li.dataset.id = t.id;
+    var txt = document.createElement('input'); txt.type = 'text'; txt.value = t.text; txt.maxLength = 200;
+    var sel = document.createElement('select');
+    ['low', 'medium', 'high'].forEach(function (p) {
+      var o = document.createElement('option'); o.value = p; o.textContent = cap(p);
+      if (p === t.priority) o.selected = true; sel.appendChild(o);
+    });
+    var dt = document.createElement('input'); dt.type = 'date'; dt.value = t.due || '';
+
+    var grid = el('div', 'edit-grid');
+    grid.appendChild(field('Edit task', txt, 'edit-text'));
+    grid.appendChild(field('Priority', sel, 'edit-prio'));
+    grid.appendChild(field('Due date', dt, 'edit-due'));
+
+    var msg = el('p', 'error'); msg.setAttribute('role', 'alert'); msg.style.width = '100%'; msg.style.margin = '0';
+
+    function saveEdit() {
+      var v = txt.value.trim();
+      if (!v) { msg.textContent = 'Task text cannot be empty.'; txt.setAttribute('aria-invalid', 'true'); txt.focus(); return; }
+      t.text = v; t.priority = sel.value; t.due = dt.value || '';
+      editingId = null; save(); render(); announce('Task updated.');
+      var back = list.querySelector('li[data-id="' + t.id + '"] .actions button');
+      if (back) back.focus();
+    }
+    function cancelEdit() {
+      editingId = null; render(); announce('Edit cancelled.');
+      var back = list.querySelector('li[data-id="' + t.id + '"] .actions button');
+      if (back) back.focus();
+    }
+    li.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { e.preventDefault(); cancelEdit(); }
+      else if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); saveEdit(); }
+    });
+
+    var ea = el('div', 'edit-actions');
+    ea.appendChild(btn('Cancel', 'btn-ghost', null, cancelEdit));
+    ea.appendChild(btn('Save', 'btn-primary', null, saveEdit));
+    li.appendChild(grid); li.appendChild(msg); li.appendChild(ea);
+    return li;
+  }
+
+  function render(focusEdit) {
+    var total = tasks.length;
+    var done = tasks.filter(function (t) { return t.done; }).length;
+    $('statTotal').textContent = total;
+    $('statCompleted').textContent = done;
+    $('statRemaining').textContent = total - done;
+
+    var visible = tasks.filter(function (t) {
+      return filter === 'all' || (filter === 'active' ? !t.done : t.done);
+    });
+    list.replaceChildren();
+    visible.forEach(function (t) { list.appendChild(t.id === editingId ? buildEditRow(t) : buildRow(t)); });
+
+    if (!visible.length) {
+      emptyEl.hidden = false; emptyEl.replaceChildren();
+      var msgs = {
+        all: ['No tasks yet', 'Add your first task above to get started.'],
+        active: ['Nothing left to do', 'All of your tasks are complete. Nice work!'],
+        completed: ['No completed tasks', 'Finish a task and it will show up here.']
+      }[filter];
+      emptyEl.appendChild(el('strong', null, msgs[0]));
+      emptyEl.appendChild(el('span', null, msgs[1]));
+    } else { emptyEl.hidden = true; }
+
+    document.querySelectorAll('[data-filter]').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.dataset.filter === filter));
+    });
+    $('clearCompletedBtn').disabled = done === 0;
+    $('clearAllBtn').disabled = total === 0;
+
+    if (focusEdit) {
+      var f = $('edit-text');
+      if (f) { f.focus(); f.select(); }
+    }
+  }
+
+  function confirmAction(title, message, okLabel, onOk) {
+    $('dlgTitle').textContent = title;
+    $('dlgMsg').textContent = message;
+    $('dlgOk').textContent = okLabel;
+    pendingConfirm = onOk;
+    if (typeof dialog.showModal === 'function') { dialog.showModal(); $('dlgCancel').focus(); }
+    else if (window.confirm(title + '\n' + message)) { onOk(); }
+  }
+  $('dlgCancel').addEventListener('click', function () { pendingConfirm = null; dialog.close(); });
+  $('dlgOk').addEventListener('click', function () {
+    var fn = pendingConfirm; pendingConfirm = null; dialog.close();
+    if (fn) fn();
+  });
+  dialog.addEventListener('click', function (e) { if (e.target === dialog) { pendingConfirm = null; dialog.close(); } });
+
+  $('clearCompletedBtn').addEventListener('click', function () {
+    var n = tasks.filter(function (t) { return t.done; }).length;
+    if (!n) return;
+    confirmAction('Clear completed tasks?', 'This will permanently remove ' + n + ' completed task' + (n === 1 ? '' : 's') + '.', 'Yes, clear', function () {
+      tasks = tasks.filter(function (t) { return !t.done; });
+      editingId = null; save(); render(); announce('Completed tasks cleared.');
+    });
+  });
+  $('clearAllBtn').addEventListener('click', function () {
+    if (!tasks.length) return;
+    confirmAction('Clear all tasks?', 'This will permanently delete all ' + tasks.length + ' task' + (tasks.length === 1 ? '' : 's') + '. This cannot be undone.', 'Yes, delete all', function () {
+      tasks = []; editingId = null; save(); render(); announce('All tasks cleared.'); input.focus();
+    });
+  });
+
+  document.querySelectorAll('[data-filter]').forEach(function (b) {
+    b.addEventListener('click', function () { filter = b.dataset.filter; editingId = null; render(); });
+  });
+  input.addEventListener('input', clearError);
+  form.addEventListener('submit', addTask);
+
+  load();
+  render();
+})();
+</script>
+</body>
+</html>
